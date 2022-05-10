@@ -4,12 +4,14 @@ import requests
 from bs4 import BeautifulSoup
 import csv
 import re
+import os
 
 urlScrape = "http://books.toscrape.com/"
 csvHeader = ['product_pageBook_url', 'universal_product_code', 'title', 'price_including_tax',
     'price_excluding_tax', 'number_available', 'product_description', 'category',
     'review_rating', 'image_url']
 categoriesCsvDirectory = "./data/categories/"
+imagesDirectory = "./data/images/"
 
 # Extract the required information from the book web page
 def extractBookInformation(bUrl):
@@ -138,4 +140,19 @@ def extractAllBooksCategories():
         categoryName = createCsvFileName(catUrl)
         extractBooksCategory(categoryName, categoryUrl)
 
+# Download all books images in a local directory
+def extractAllBooksImages():
+    for file in os.listdir(categoriesCsvDirectory):
+        with open(categoriesCsvDirectory + file) as file_csv:
+            reader = csv.DictReader(file_csv, delimiter=',')
+            for line in reader:
+                try:
+                    image = requests.get(line['image_url'])
+                except requests.exceptions.RequestException as e:
+                    raise SystemExit(e)
+                imgFilename = imagesDirectory + line['universal_product_code'] + '.jpg'
+                with open(imgFilename, 'wb') as file_img:
+                    file_img.write(image.content)
+
 extractAllBooksCategories()
+extractAllBooksImages()
