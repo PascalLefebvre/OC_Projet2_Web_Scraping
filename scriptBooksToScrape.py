@@ -1,5 +1,4 @@
 from logging import exception
-from nis import cat
 import requests
 from bs4 import BeautifulSoup
 import csv
@@ -124,6 +123,7 @@ def createCsvFileName(ctgryUrl):
     while i < len(matchWord):
         ctgryName += matchWord[i]
         i += 1
+    ctgryName += '.csv'
     return ctgryName
 
 # Extract books information per category from all the "books.toscrape.com" web site 
