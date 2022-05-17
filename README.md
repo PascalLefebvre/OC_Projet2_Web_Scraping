@@ -13,7 +13,7 @@
 * Extrait du site "books.toscrape.com", par catégorie et pour chaque livre, les informations suivantes ...
 
 	product_page_url,
-	universal_ product_code (upc),
+	universal_product_code (upc),
 	title,
 	price_including_tax,
 	price_excluding_tax,
@@ -41,5 +41,5 @@
 
 * Crée dans le répertoire "./data/categories" un fichier "<nom catégorie>.csv" par catégorie
 
-* Télécharge dans le répertoire "./data/images" un fichier "<upc>.jpg" pour chaque livre
+* Télécharge dans le répertoire "./data/images" un fichier "<universal product code>.jpg" pour chaque livre
 	

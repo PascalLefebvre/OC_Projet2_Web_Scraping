@@ -17,15 +17,14 @@ def extractBookInformation(bUrl):
     book = [bUrl]
 
     try:
-        pageBook = requests.get(bUrl)
-    except requests.exceptions.RequestException as e:
-        raise SystemExit(e)
+        pageBook = requests.get(bUrl, timeout = 5)
+    except requests.exceptions.RequestException:
+        return book
     
     soupBook = BeautifulSoup(pageBook.content, 'html.parser')
 
-    # Extract table "Product Information" (lines 2 and 5 useless)
-    # line1 = UPC / line3 = HT price / line4 = TTC price
-    # line6 = available stock / line7 = number of reviews
+    # Extract table "Product Information" (lines 2, 5 and 7 useless)
+    # line1 = UPC / line3 = HT price / line4 = TTC price / line6 = available stock
     productInformation = []
     tableLines = soupBook.find('table', class_ = "table table-striped")
     for line in tableLines.find_all('td'):
@@ -34,6 +33,7 @@ def extractBookInformation(bUrl):
     # Delete useless information
     productInformation.pop(1)
     productInformation.pop(3)
+    productInformation.pop(-1)
     
     # Extract the quantity of books available
     if productInformation[3].find('available') != -1:
@@ -45,6 +45,9 @@ def extractBookInformation(bUrl):
 
     # Extract title
     title = soupBook.find('h1').string.replace(',', '')
+
+    # Extract review rating
+    reviewRating = soupBook.find('p', class_ = 'star-rating')['class'][1]
 
     # Extract product description 
     productPage = soupBook.find('article', class_ = 'product_page').find('p', class_ = '')
@@ -70,7 +73,7 @@ def extractBookInformation(bUrl):
     book.append(productInformation[3])
     book.append(productDescription)
     book.append(category)
-    book.append(productInformation[4])
+    book.append(reviewRating)
     book.append(imageUrl)
 
     return book
@@ -84,17 +87,17 @@ def extractBooksCategory(cName, cUrl):
     except:
         print("Could not create \"", csvFileName, "\" file")
         exit()
-    
-    writer = csv.writer(file_csv, delimiter=',')
-    writer.writerow(csvHeader)
-    
+        
     extractPage = True
     while extractPage:
         try:
-            pageCategory = requests.get(cUrl)
-        except requests.exceptions.RequestException as e:
-            raise SystemExit(e)
-        
+            pageCategory = requests.get(cUrl, timeout = 5)
+        except requests.exceptions.RequestException:
+            break
+
+        writer = csv.writer(file_csv, delimiter=',')
+        writer.writerow(csvHeader)
+
         soupCategory = BeautifulSoup(pageCategory.content, 'html.parser')
 
         # Write books information from one web page in the CSV file
@@ -102,7 +105,8 @@ def extractBooksCategory(cName, cUrl):
         for bk in booksUrl:
             bookUrl = urlScrape + bk.find('a')['href'].replace('../../..', 'catalogue')
             bookInformation = extractBookInformation(bookUrl)
-            writer.writerow(bookInformation)
+            if len(bookInformation) > 1:
+                writer.writerow(bookInformation)
         
         # For the category, create the URL of the next web page if exists
         if soupCategory.find('li', class_ = 'next') != None:
@@ -147,12 +151,12 @@ def extractAllBooksImages():
             reader = csv.DictReader(file_csv, delimiter=',')
             for line in reader:
                 try:
-                    image = requests.get(line['image_url'])
-                except requests.exceptions.RequestException as e:
-                    raise SystemExit(e)
-                imgFilename = imagesDirectory + line['universal_product_code'] + '.jpg'
-                with open(imgFilename, 'wb') as file_img:
-                    file_img.write(image.content)
-
+                    image = requests.get(line['image_url'], timeout = 5)
+                    imgFilename = imagesDirectory + line['universal_product_code'] + '.jpg'
+                    with open(imgFilename, 'wb') as file_img:
+                        file_img.write(image.content)
+                except requests.exceptions.RequestException:
+                    continue
+ 
 extractAllBooksCategories()
 extractAllBooksImages()
